@@ -544,7 +544,7 @@ class SRU_Compute_GPU(Function):
             last_hidden = torch.cat((c[-1, :, :d], c[0, :, d:]), dim=1)
         else:
             last_hidden = c[-1]
-        return h, last_hidden
+        return h, c
 
     def backward(self, grad_h, grad_last):
         bidir = 2 if self.bidirectional else 1
