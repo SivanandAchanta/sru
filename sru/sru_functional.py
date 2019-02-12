@@ -396,14 +396,16 @@ class SRUCell(nn.Module):
             bidir = 2 if self.bidirectional else 1
             mask_c = self.get_dropout_mask_((batch, n_out*bidir), self.dropout)
             h, c = SRU_Compute(u, input, self.weight_c, self.bias, c0, mask_c)
+            c_full = SRU_Compute.intermediate
         else:
             h, c = SRU_Compute(u, input, self.weight_c, self.bias, c0)
+            c_full = SRU_Compute.intermediate
 
         if return_proj:
             x_projected = x_projected.view(-1, batch, self.n_proj) if self.n_proj else input
             return h, c, x_projected
         else:
-            return h, c
+            return h, c, c_full
 
     def get_dropout_mask_(self, size, p):
         """
@@ -556,12 +558,12 @@ class SRU(nn.Module):
         prevx = input
         lstc = []
         for i, rnn in enumerate(self.rnn_lst):
-            h, c = rnn(prevx, c0[i], mask_pad=mask_pad)
+            h, c, c_full = rnn(prevx, c0[i], mask_pad=mask_pad)
             prevx = self.ln_lst[i](h) if self.use_layer_norm else h
             lstc.append(c)
 
         if return_hidden:
-            return prevx, torch.stack(lstc)
+            return prevx, torch.stack(lstc), c_full
         else:
             return prevx
 
